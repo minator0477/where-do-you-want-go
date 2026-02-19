@@ -13,6 +13,7 @@
 
 出力:
     data/geojson/meizan.geojson
+    data/geojson/meizan.js   ← file:// で直接開く場合に使用する JS 変数ファイル
 
 --with-records 時に追加されるプロパティ:
     count  : 登頂記録の件数（0 = 未登頂）
@@ -44,6 +45,7 @@ INPUT_FILES = [
 RECORD_FILE = BASE_DIR / "data/csv/my-record/meizan-record.csv"
 
 OUTPUT_FILE = BASE_DIR / "data/geojson/meizan.geojson"
+OUTPUT_JS_FILE = BASE_DIR / "data/geojson/meizan.js"
 
 
 def load_records(path: Path) -> dict[int, list[Visit]]:
@@ -104,13 +106,14 @@ def main():
     collection = MeizanFeatureCollection(features=features)
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    geojson_data = collection.model_dump(exclude_none=True)
+    geojson_str = json.dumps(geojson_data, ensure_ascii=False, indent=2)
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(
-            collection.model_dump(exclude_none=True),
-            f,
-            ensure_ascii=False,
-            indent=2,
-        )
+        f.write(geojson_str)
+
+    with open(OUTPUT_JS_FILE, "w", encoding="utf-8") as f:
+        f.write(f"const MEIZAN_GEOJSON = {geojson_str};\n")
 
     print(f"変換完了: {len(features)} 件 → {OUTPUT_FILE}")
     if args.with_records:

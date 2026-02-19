@@ -36,6 +36,60 @@ const BASEMAPS = {
 
 const DEFAULT_BASEMAP = 'osm';
 
+// 名山データ 可視化モードの定義
+const VIZ_MODES = {
+  category: {
+    label: '種別',
+    paint: {
+      'circle-color': [
+        'step', ['get', 'no'],
+        '#e74c3c',          // 百名山   (No.1-100)
+        101, '#f39c12',     // 二百名山 (No.101-200)
+        201, '#3498db',     // 三百名山 (No.201+)
+      ],
+      'circle-radius': 6,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.9,
+    },
+  },
+  elevation: {
+    label: '標高',
+    paint: {
+      'circle-color': [
+        'interpolate', ['linear'], ['get', 'elev_m'],
+        500,  '#ffffcc',
+        1500, '#feb24c',
+        2500, '#f03b20',
+        3800, '#800026',
+      ],
+      'circle-radius': 6,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.9,
+    },
+  },
+  count: {
+    label: '登頂回数',
+    paint: {
+      'circle-color': [
+        'case',
+        ['>', ['coalesce', ['get', 'count'], 0], 0], '#3366ff',
+        '#cccccc',
+      ],
+      'circle-radius': [
+        'interpolate', ['linear'], ['coalesce', ['get', 'count'], 0],
+        0, 5,
+        1, 8,
+        3, 11,
+      ],
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.9,
+    },
+  },
+};
+
 // 全ソース・レイヤーを初期スタイルに含めてまとめて登録
 const sources = {};
 const layers = [];
@@ -100,14 +154,18 @@ map.on('load', () => {
     },
   });
 
+  // 名山 GeoJSON ソース + サークルレイヤー
+  map.addSource('meizan', {
+    type: 'geojson',
+    data: MEIZAN_GEOJSON,
+  });
+
   map.addLayer({
-    id: 'sky',
-    type: 'sky',
-    paint: {
-      'sky-type': 'atmosphere',
-      'sky-atmosphere-sun': [0, 90],
-      'sky-atmosphere-sun-intensity': 15,
-    },
+    id: 'meizan-circles',
+    type: 'circle',
+    source: 'meizan',
+    layout: { visibility: 'visible' },
+    paint: VIZ_MODES.category.paint,
   });
 });
 
@@ -195,3 +253,103 @@ resetViewBtn.addEventListener('click', () => {
   pitchSlider.value = 0;
   pitchValueLabel.textContent = '0°';
 });
+
+// ─── 名山データ表示 UI ────────────────────────────────────────────────────────
+
+let meizanVisible = true;
+let currentViz = 'category';
+
+const dataButtonContainer = document.getElementById('data-buttons');
+const legendEl = document.getElementById('meizan-legend');
+
+// 可視化モードごとの凡例 HTML を返す
+function getLegendHTML(mode) {
+  if (mode === 'category') {
+    return `
+      <div class="legend-title">種別</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#e74c3c"></span>百名山（No.1–100）</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#f39c12"></span>二百名山（No.101–200）</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#3498db"></span>三百名山（No.201–300）</div>
+    `;
+  }
+  if (mode === 'elevation') {
+    return `
+      <div class="legend-title">標高</div>
+      <div class="legend-gradient" style="background:linear-gradient(to right,#ffffcc,#feb24c,#f03b20,#800026)"></div>
+      <div class="legend-label-row"><span>500 m</span><span>3800 m</span></div>
+    `;
+  }
+  if (mode === 'count') {
+    return `
+      <div class="legend-title">登頂回数</div>
+      <div class="legend-count-row">
+        <div class="legend-count-item">
+          <svg width="22" height="22"><circle cx="11" cy="11" r="5" fill="#cccccc" stroke="#fff" stroke-width="1.5"/></svg>
+          <span>未登頂</span>
+        </div>
+        <div class="legend-count-item">
+          <svg width="22" height="22"><circle cx="11" cy="11" r="8" fill="#3366ff" stroke="#fff" stroke-width="1.5"/></svg>
+          <span>1回</span>
+        </div>
+        <div class="legend-count-item">
+          <svg width="22" height="22"><circle cx="11" cy="11" r="11" fill="#3366ff" stroke="#fff" stroke-width="1.5"/></svg>
+          <span>3回以上</span>
+        </div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+// 凡例の表示・非表示と内容を更新
+function updateLegend(visible, mode) {
+  legendEl.style.display = visible ? 'block' : 'none';
+  if (visible) legendEl.innerHTML = getLegendHTML(mode);
+}
+
+// 名山レイヤー トグルボタン
+const meizanToggleBtn = document.createElement('button');
+meizanToggleBtn.className = 'layer-btn active';
+meizanToggleBtn.innerHTML = '<span class="icon">⛰️</span>名山を表示';
+dataButtonContainer.appendChild(meizanToggleBtn);
+
+meizanToggleBtn.addEventListener('click', () => {
+  meizanVisible = !meizanVisible;
+  map.setLayoutProperty('meizan-circles', 'visibility', meizanVisible ? 'visible' : 'none');
+  meizanToggleBtn.classList.toggle('active', meizanVisible);
+  updateLegend(meizanVisible, currentViz);
+});
+
+// 可視化モード切替ボタン
+const vizContainer = document.createElement('div');
+vizContainer.className = 'viz-buttons';
+
+Object.entries(VIZ_MODES).forEach(([key, cfg]) => {
+  const btn = document.createElement('button');
+  btn.className = 'viz-btn' + (key === currentViz ? ' active' : '');
+  btn.textContent = cfg.label;
+  btn.dataset.viz = key;
+  vizContainer.appendChild(btn);
+
+  btn.addEventListener('click', () => {
+    if (key === currentViz) return;
+    currentViz = key;
+
+    // ペイントプロパティをまとめて更新
+    Object.entries(VIZ_MODES[key].paint).forEach(([prop, val]) => {
+      map.setPaintProperty('meizan-circles', prop, val);
+    });
+
+    // ボタンのアクティブ状態を更新
+    vizContainer.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 凡例を更新
+    updateLegend(meizanVisible, currentViz);
+  });
+});
+
+dataButtonContainer.appendChild(vizContainer);
+
+// 初期凡例を表示
+updateLegend(meizanVisible, currentViz);

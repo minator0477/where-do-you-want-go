@@ -114,3 +114,110 @@ body {
   cursor: pointer;
   accent-color: #3366ff;
 }
+
+/* 可視化モード切替ボタン */
+.viz-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.viz-btn {
+  flex: 1;
+  padding: 5px 2px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  color: #444;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.viz-btn:hover {
+  background: #f0f4ff;
+  border-color: #99b3ff;
+}
+
+.viz-btn.active {
+  background: #3366ff;
+  border-color: #3366ff;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 凡例パネル */
+#meizan-legend {
+  position: absolute;
+  bottom: 36px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  min-width: 140px;
+  backdrop-filter: blur(4px);
+}
+
+.legend-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.legend-row:last-child {
+  margin-bottom: 0;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.legend-gradient {
+  height: 12px;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.legend-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #666;
+}
+
+.legend-count-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.legend-count-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #555;
+}
