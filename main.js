@@ -167,6 +167,56 @@ map.on('load', () => {
     layout: { visibility: 'visible' },
     paint: VIZ_MODES.category.paint,
   });
+
+  // クリックでポップアップ表示
+  const popup = new maplibregl.Popup({
+    closeButton: true,
+    closeOnClick: false,
+    maxWidth: '280px',
+  });
+
+  map.on('click', 'meizan-circles', (e) => {
+    const props = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates.slice();
+
+    const category = props.no <= 100 ? '百名山' : props.no <= 200 ? '二百名山' : '三百名山';
+
+    let countItem = '';
+    let visitsItems = '';
+    if (props.count !== undefined && props.count !== null) {
+      countItem = `<li>登頂回数：${props.count} 回</li>`;
+      if (props.count > 0 && props.visits) {
+        const visits = typeof props.visits === 'string' ? JSON.parse(props.visits) : props.visits;
+        visitsItems = visits.map(v =>
+          `<li>${v.date}${v.note ? '（' + v.note + '）' : ''}</li>`
+        ).join('');
+        visitsItems = `<li>登頂日<ul class="popup-sublist">${visitsItems}</ul></li>`;
+      }
+    }
+
+    popup.setLngLat(coords).setHTML(`
+      <div class="popup-content">
+        <div class="popup-title">${props.name}</div>
+        <ul class="popup-list">
+          <li>よみ：${props.yomi}</li>
+          <li>種別：${category}</li>
+          <li>標高：${props.elev_m.toLocaleString()} m</li>
+          <li>所在地：${props.location}</li>
+          <li>地域：${props.region}</li>
+          ${countItem}
+          ${visitsItems}
+        </ul>
+      </div>
+    `).addTo(map);
+  });
+
+  // ホバー時にカーソルをポインターに変更
+  map.on('mouseenter', 'meizan-circles', () => {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+  map.on('mouseleave', 'meizan-circles', () => {
+    map.getCanvas().style.cursor = '';
+  });
 });
 
 // 背景地図切替ボタンを動的生成
