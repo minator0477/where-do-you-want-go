@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+
+# uv
+uv.lock
+
+# 個人データ（登頂記録など）
+data/csv/my-record/
+
+# macOS
+.DS_Store
+
+# エディタ
+.idea/
+*.swp
+*.swo
+
+# ログ
+*.log
